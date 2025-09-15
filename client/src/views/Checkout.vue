@@ -193,145 +193,39 @@
             <div v-if="currentStep === 'payment'" class="step-content">
               <h2 class="section-title">Méthode de paiement</h2>
               
-              <form @submit.prevent="handlePaymentSubmit" class="payment-form">
-                <!-- Méthodes de paiement -->
-                <div class="payment-methods">
-                  <div class="payment-method">
-                    <input
-                      id="stripe"
-                      v-model="paymentForm.method"
-                      type="radio"
-                      value="stripe"
-                      class="payment-radio"
-                    />
-                    <label for="stripe" class="payment-label">
-                      <div class="payment-icon">💳</div>
-                      <div class="payment-info">
-                        <span class="payment-name">Carte bancaire</span>
-                        <span class="payment-description">Visa, Mastercard, American Express</span>
-                      </div>
-                    </label>
-                  </div>
+              <!-- Sélecteur de méthode de paiement -->
+              <PaymentMethodSelector
+                :amount="cartStore.totalPrice"
+                @method-selected="handlePaymentMethodSelected"
+              />
 
-                  <div class="payment-method">
-                    <input
-                      id="paypal"
-                      v-model="paymentForm.method"
-                      type="radio"
-                      value="paypal"
-                      class="payment-radio"
-                    />
-                    <label for="paypal" class="payment-label">
-                      <div class="payment-icon">🅿️</div>
-                      <div class="payment-info">
-                        <span class="payment-name">PayPal</span>
-                        <span class="payment-description">Paiement sécurisé avec PayPal</span>
-                      </div>
-                    </label>
-                  </div>
-                </div>
+              <!-- Formulaire de paiement Stripe -->
+              <div v-if="paymentForm.method === 'stripe'" class="payment-form-container">
+                <StripePayment
+                  :amount="cartStore.totalPrice"
+                  :shipping-address="shippingForm"
+                  :order-data="orderData"
+                  @payment-success="handlePaymentSuccess"
+                  @payment-error="handlePaymentError"
+                />
+              </div>
 
-                <!-- Informations de facturation -->
-                <div class="billing-section">
-                  <h3 class="subsection-title">Informations de facturation</h3>
-                  
-                  <div class="form-group">
-                    <label class="checkbox-label">
-                      <input
-                        v-model="billingForm.sameAsShipping"
-                        type="checkbox"
-                        class="checkbox-input"
-                        @change="handleBillingSameAsShipping"
-                      />
-                      <span class="checkbox-text">Même adresse que la livraison</span>
-                    </label>
-                  </div>
+              <!-- Formulaire de paiement PayPal -->
+              <div v-if="paymentForm.method === 'paypal'" class="payment-form-container">
+                <PayPalPayment
+                  :amount="cartStore.totalPrice"
+                  :shipping-address="shippingForm"
+                  :order-data="orderData"
+                  @payment-success="handlePaymentSuccess"
+                  @payment-error="handlePaymentError"
+                />
+              </div>
 
-                  <div v-if="!billingForm.sameAsShipping" class="billing-form">
-                    <div class="form-row">
-                      <div class="form-group">
-                        <label for="billingFirstName" class="form-label">Prénom *</label>
-                        <input
-                          id="billingFirstName"
-                          v-model="billingForm.firstName"
-                          type="text"
-                          class="form-input"
-                          :class="{ 'error': errors.billingFirstName }"
-                          required
-                          @blur="validateField('billingFirstName')"
-                        />
-                        <div v-if="errors.billingFirstName" class="form-error">{{ errors.billingFirstName }}</div>
-                      </div>
-                      <div class="form-group">
-                        <label for="billingLastName" class="form-label">Nom *</label>
-                        <input
-                          id="billingLastName"
-                          v-model="billingForm.lastName"
-                          type="text"
-                          class="form-input"
-                          :class="{ 'error': errors.billingLastName }"
-                          required
-                          @blur="validateField('billingLastName')"
-                        />
-                        <div v-if="errors.billingLastName" class="form-error">{{ errors.billingLastName }}</div>
-                      </div>
-                    </div>
-
-                    <div class="form-group">
-                      <label for="billingAddress" class="form-label">Adresse *</label>
-                      <input
-                        id="billingAddress"
-                        v-model="billingForm.address"
-                        type="text"
-                        class="form-input"
-                        :class="{ 'error': errors.billingAddress }"
-                        required
-                        @blur="validateField('billingAddress')"
-                      />
-                      <div v-if="errors.billingAddress" class="form-error">{{ errors.billingAddress }}</div>
-                    </div>
-
-                    <div class="form-row">
-                      <div class="form-group">
-                        <label for="billingCity" class="form-label">Ville *</label>
-                        <input
-                          id="billingCity"
-                          v-model="billingForm.city"
-                          type="text"
-                          class="form-input"
-                          :class="{ 'error': errors.billingCity }"
-                          required
-                          @blur="validateField('billingCity')"
-                        />
-                        <div v-if="errors.billingCity" class="form-error">{{ errors.billingCity }}</div>
-                      </div>
-                      <div class="form-group">
-                        <label for="billingPostalCode" class="form-label">Code postal *</label>
-                        <input
-                          id="billingPostalCode"
-                          v-model="billingForm.postalCode"
-                          type="text"
-                          class="form-input"
-                          :class="{ 'error': errors.billingPostalCode }"
-                          required
-                          @blur="validateField('billingPostalCode')"
-                        />
-                        <div v-if="errors.billingPostalCode" class="form-error">{{ errors.billingPostalCode }}</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="form-actions">
-                  <button type="button" class="btn btn-outline" @click="goToStep('shipping')">
-                    Retour
-                  </button>
-                  <button type="submit" class="btn btn-primary btn-lg">
-                    <span v-if="isProcessing" class="spinner"></span>
-                    <span v-else>Confirmer la commande</span>
-                  </button>
-                </div>
-              </form>
+              <div class="form-actions">
+                <button type="button" class="btn btn-outline" @click="goToStep('shipping')">
+                  Retour
+                </button>
+              </div>
             </div>
 
             <!-- Étape 3: Confirmation -->
@@ -440,6 +334,9 @@ import { useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cart'
 import { useAuthStore } from '../stores/auth'
 import { createValidator, schemas } from '../utils/validation'
+import PaymentMethodSelector from '../components/PaymentMethodSelector.vue'
+import StripePayment from '../components/StripePayment.vue'
+import PayPalPayment from '../components/PayPalPayment.vue'
 
 // Router et stores
 const router = useRouter()
@@ -544,32 +441,32 @@ const handleShippingSubmit = () => {
   calculateShipping()
 }
 
-const handlePaymentSubmit = async () => {
-  if (!billingForm.sameAsShipping) {
-    const billingFields = ['billingFirstName', 'billingLastName', 'billingAddress', 'billingCity', 'billingPostalCode']
-    const billingFormData = {
-      firstName: billingForm.firstName,
-      lastName: billingForm.lastName,
-      address: billingForm.address,
-      city: billingForm.city,
-      postalCode: billingForm.postalCode
-    }
-    
-    const isValid = validator.validate(billingFormData)
-    if (!isValid) {
-      Object.assign(errors, validator.getErrors())
-      return
-    }
-  }
+const handlePaymentMethodSelected = (method) => {
+  paymentForm.method = method
+}
 
+const handlePaymentSuccess = async (paymentData) => {
   try {
     isProcessing.value = true
     
-    // TODO: Implémenter le traitement du paiement
-    // const result = await processPayment()
+    // Créer la commande avec les données de paiement
+    const orderData = {
+      items: cartStore.items,
+      shippingAddress: shippingForm,
+      billingAddress: billingForm.sameAsShipping ? shippingForm : billingForm,
+      paymentMethod: paymentData.paymentMethod,
+      paymentData: paymentData,
+      total: finalTotal.value,
+      subtotal: cartStore.totalPrice,
+      shippingCost: shippingCost.value || 0,
+      taxAmount: taxAmount.value
+    }
+
+    // TODO: Envoyer la commande au serveur
+    // const response = await api.post('/orders', orderData)
     
-    // Simulation du traitement
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    // Simulation de la création de commande
+    await new Promise(resolve => setTimeout(resolve, 1000))
     
     orderNumber.value = 'CMD-' + Date.now()
     completedSteps.value.push('payment')
@@ -579,11 +476,17 @@ const handlePaymentSubmit = async () => {
     await cartStore.clearCart()
     
   } catch (error) {
-    console.error('Erreur lors du paiement:', error)
-    // Gérer l'erreur de paiement
+    console.error('Erreur lors de la création de la commande:', error)
+    handlePaymentError(error.message)
   } finally {
     isProcessing.value = false
   }
+}
+
+const handlePaymentError = (errorMessage) => {
+  console.error('Erreur de paiement:', errorMessage)
+  // Afficher l'erreur à l'utilisateur
+  alert('Erreur de paiement: ' + errorMessage)
 }
 
 const handleBillingSameAsShipping = () => {
