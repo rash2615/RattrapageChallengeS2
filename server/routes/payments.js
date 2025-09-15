@@ -5,7 +5,7 @@
 
 const express = require('express')
 const router = express.Router()
-const auth = require('../middleware/auth')
+const { authenticate: auth } = require('../middleware/auth')
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 const paypal = require('@paypal/checkout-server-sdk')
 
