@@ -208,8 +208,16 @@
           </div>
         </router-link>
 
-        <div class="action-card" @click="handleExportData">
+        <router-link to="/admin/analytics" class="action-card">
           <div class="action-icon">📊</div>
+          <div class="action-content">
+            <h4 class="action-title">Analytics & Rapports</h4>
+            <p class="action-description">Analyser les performances et générer des rapports</p>
+          </div>
+        </router-link>
+
+        <div class="action-card" @click="handleExportData">
+          <div class="action-icon">💾</div>
           <div class="action-content">
             <h4 class="action-title">Exporter les données</h4>
             <p class="action-description">Télécharger les rapports</p>
