@@ -1,10 +1,10 @@
 /**
- * Utilitaires pour créer des tableaux avancés sans librairies externes
- * Remplace les librairies de tableaux pour le tri, recherche, pagination, export CSV
+ * Utilitaires pour les tableaux
+ * Fonctionnalités avancées sans librairies externes
  */
 
 /**
- * Classe pour gérer les tableaux avancés
+ * Classe de gestion des tableaux
  */
 export class TableManager {
   constructor(tableElement, options = {}) {
@@ -21,503 +21,540 @@ export class TableManager {
     
     this.data = []
     this.filteredData = []
+    this.sortedData = []
     this.currentPage = 1
     this.sortColumn = null
     this.sortDirection = 'asc'
-    this.searchTerm = ''
+    this.searchQuery = ''
     this.selectedItems = new Set()
     
     this.init()
   }
-  
+
+  /**
+   * Initialiser le tableau
+   */
   init() {
-    this.createTableHeader()
-    this.createTableBody()
-    this.createTableFooter()
+    this.createTableStructure()
     this.bindEvents()
+    this.render()
   }
-  
-  createTableHeader() {
-    const thead = this.table.querySelector('thead')
-    if (!thead) return
+
+  /**
+   * Créer la structure du tableau
+   */
+  createTableStructure() {
+    // Créer le conteneur
+    const container = document.createElement('div')
+    container.className = 'table-container'
     
-    // Ajouter des classes CSS pour le style
-    thead.style.cssText = `
-      background-color: #f8f9fa;
-      border-bottom: 2px solid #dee2e6;
-    `
+    // Créer la barre d'outils
+    if (this.options.searchable || this.options.exportable) {
+      const toolbar = this.createToolbar()
+      container.appendChild(toolbar)
+    }
     
-    const rows = thead.querySelectorAll('tr')
-    rows.forEach(row => {
-      const cells = row.querySelectorAll('th')
-      cells.forEach((cell, index) => {
-        if (this.options.sortable) {
-          cell.style.cursor = 'pointer'
-          cell.style.userSelect = 'none'
-          cell.innerHTML += ' <span class="sort-indicator">↕</span>'
-        }
-      })
-    })
-  }
-  
-  createTableBody() {
-    const tbody = this.table.querySelector('tbody')
-    if (!tbody) return
+    // Créer le tableau
+    const tableWrapper = document.createElement('div')
+    tableWrapper.className = 'table-wrapper'
     
-    tbody.style.cssText = `
-      background-color: white;
-    `
-  }
-  
-  createTableFooter() {
-    if (!this.options.pagination && !this.options.exportable) return
+    this.table.className = 'table'
+    tableWrapper.appendChild(this.table)
+    container.appendChild(tableWrapper)
     
-    const tfoot = document.createElement('tfoot')
-    tfoot.style.cssText = `
-      background-color: #f8f9fa;
-      border-top: 2px solid #dee2e6;
-    `
-    
-    const row = document.createElement('tr')
-    const cell = document.createElement('td')
-    cell.colSpan = this.getColumnCount()
-    cell.style.cssText = `
-      padding: 16px;
-      text-align: center;
-    `
-    
-    // Contrôles de pagination
+    // Créer la pagination
     if (this.options.pagination) {
-      const paginationDiv = document.createElement('div')
-      paginationDiv.className = 'table-pagination'
-      paginationDiv.style.cssText = `
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 16px;
-      `
-      
-      paginationDiv.innerHTML = `
-        <button class="pagination-btn" data-action="first" disabled>«</button>
-        <button class="pagination-btn" data-action="prev" disabled>‹</button>
-        <span class="pagination-info">Page 1 sur 1</span>
-        <button class="pagination-btn" data-action="next" disabled>›</button>
-        <button class="pagination-btn" data-action="last" disabled>»</button>
-      `
-      
-      cell.appendChild(paginationDiv)
+      const pagination = this.createPagination()
+      container.appendChild(pagination)
     }
     
-    // Contrôles d'export et sélection
-    const controlsDiv = document.createElement('div')
-    controlsDiv.style.cssText = `
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 16px;
-    `
+    // Remplacer le tableau original
+    this.table.parentNode.replaceChild(container, this.table)
+    this.container = container
+  }
+
+  /**
+   * Créer la barre d'outils
+   */
+  createToolbar() {
+    const toolbar = document.createElement('div')
+    toolbar.className = 'table-toolbar'
     
-    // Informations de sélection
-    if (this.options.selectable) {
-      const selectionInfo = document.createElement('div')
-      selectionInfo.className = 'selection-info'
-      selectionInfo.style.cssText = `
-        color: #6b7280;
-        font-size: 14px;
-      `
-      selectionInfo.textContent = '0 élément(s) sélectionné(s)'
-      controlsDiv.appendChild(selectionInfo)
+    if (this.options.searchable) {
+      const searchContainer = document.createElement('div')
+      searchContainer.className = 'table-search'
+      
+      const searchInput = document.createElement('input')
+      searchInput.type = 'text'
+      searchInput.className = 'form-input'
+      searchInput.placeholder = 'Rechercher...'
+      searchInput.addEventListener('input', (e) => {
+        this.setSearchQuery(e.target.value)
+      })
+      
+      searchContainer.appendChild(searchInput)
+      toolbar.appendChild(searchContainer)
     }
-    
-    // Boutons d'action
-    const actionsDiv = document.createElement('div')
-    actionsDiv.style.cssText = `
-      display: flex;
-      gap: 8px;
-    `
     
     if (this.options.exportable) {
-      const exportBtn = document.createElement('button')
-      exportBtn.className = 'btn btn-outline-primary'
-      exportBtn.textContent = 'Exporter CSV'
-      exportBtn.style.cssText = `
-        background-color: transparent;
-        border: 1px solid #3b82f6;
-        color: #3b82f6;
-        padding: 6px 12px;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 14px;
-      `
-      exportBtn.addEventListener('click', () => this.exportToCSV())
-      actionsDiv.appendChild(exportBtn)
+      const exportContainer = document.createElement('div')
+      exportContainer.className = 'table-export'
+      
+      const exportButton = document.createElement('button')
+      exportButton.className = 'btn btn-outline btn-sm'
+      exportButton.textContent = 'Exporter CSV'
+      exportButton.addEventListener('click', () => {
+        this.exportToCSV()
+      })
+      
+      exportContainer.appendChild(exportButton)
+      toolbar.appendChild(exportContainer)
     }
     
-    if (this.options.selectable) {
-      const deleteSelectedBtn = document.createElement('button')
-      deleteSelectedBtn.className = 'btn btn-outline-danger'
-      deleteSelectedBtn.textContent = 'Supprimer sélection'
-      deleteSelectedBtn.style.cssText = `
-        background-color: transparent;
-        border: 1px solid #ef4444;
-        color: #ef4444;
-        padding: 6px 12px;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 14px;
-        opacity: 0.5;
-        pointer-events: none;
-      `
-      deleteSelectedBtn.addEventListener('click', () => this.deleteSelected())
-      actionsDiv.appendChild(deleteSelectedBtn)
-    }
-    
-    controlsDiv.appendChild(actionsDiv)
-    cell.appendChild(controlsDiv)
-    row.appendChild(cell)
-    tfoot.appendChild(row)
-    this.table.appendChild(tfoot)
+    return toolbar
   }
-  
+
+  /**
+   * Créer la pagination
+   */
+  createPagination() {
+    const pagination = document.createElement('div')
+    pagination.className = 'table-pagination'
+    
+    const info = document.createElement('div')
+    info.className = 'pagination-info'
+    
+    const controls = document.createElement('div')
+    controls.className = 'pagination-controls'
+    
+    const prevButton = document.createElement('button')
+    prevButton.className = 'btn btn-sm btn-outline'
+    prevButton.textContent = 'Précédent'
+    prevButton.addEventListener('click', () => {
+      this.previousPage()
+    })
+    
+    const nextButton = document.createElement('button')
+    nextButton.className = 'btn btn-sm btn-outline'
+    nextButton.textContent = 'Suivant'
+    nextButton.addEventListener('click', () => {
+      this.nextPage()
+    })
+    
+    controls.appendChild(prevButton)
+    controls.appendChild(nextButton)
+    
+    pagination.appendChild(info)
+    pagination.appendChild(controls)
+    
+    this.pagination = pagination
+    this.paginationInfo = info
+    this.prevButton = prevButton
+    this.nextButton = nextButton
+    
+    return pagination
+  }
+
+  /**
+   * Lier les événements
+   */
   bindEvents() {
     // Tri des colonnes
     if (this.options.sortable) {
-      const headers = this.table.querySelectorAll('thead th')
-      headers.forEach((header, index) => {
-        header.addEventListener('click', () => this.sortByColumn(index))
+      this.table.addEventListener('click', (e) => {
+        const th = e.target.closest('th[data-sortable]')
+        if (th) {
+          const column = th.dataset.sortable
+          this.sort(column)
+        }
       })
     }
     
-    // Pagination
-    if (this.options.pagination) {
-      const paginationBtns = this.table.querySelectorAll('.pagination-btn')
-      paginationBtns.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const action = e.target.dataset.action
-          this.handlePagination(action)
-        })
-      })
-    }
-    
-    // Sélection
+    // Sélection multiple
     if (this.options.selectable) {
       this.table.addEventListener('change', (e) => {
-        if (e.target.type === 'checkbox' && e.target.classList.contains('row-select')) {
-          this.handleRowSelection(e.target)
+        if (e.target.type === 'checkbox') {
+          if (e.target.classList.contains('select-all')) {
+            this.toggleSelectAll(e.target.checked)
+          } else {
+            this.toggleSelectItem(e.target.dataset.itemId, e.target.checked)
+          }
         }
       })
     }
   }
-  
-  setData(data) {
+
+  /**
+   * Définir les données
+   * @param {Array} data - Données du tableau
+   * @param {Array} columns - Configuration des colonnes
+   */
+  setData(data, columns) {
     this.data = data
+    this.columns = columns
     this.filteredData = [...data]
+    this.sortedData = [...data]
     this.currentPage = 1
     this.render()
   }
-  
-  search(term) {
-    this.searchTerm = term.toLowerCase()
-    this.filteredData = this.data.filter(item => {
-      return Object.values(item).some(value => 
-        String(value).toLowerCase().includes(this.searchTerm)
-      )
-    })
-    this.currentPage = 1
-    this.render()
-  }
-  
-  sortByColumn(columnIndex) {
-    if (!this.options.sortable) return
-    
-    if (this.sortColumn === columnIndex) {
-      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc'
-    } else {
-      this.sortColumn = columnIndex
-      this.sortDirection = 'asc'
-    }
-    
-    this.filteredData.sort((a, b) => {
-      const aValue = this.getCellValue(a, columnIndex)
-      const bValue = this.getCellValue(b, columnIndex)
-      
-      if (aValue < bValue) return this.sortDirection === 'asc' ? -1 : 1
-      if (aValue > bValue) return this.sortDirection === 'asc' ? 1 : -1
-      return 0
-    })
-    
-    this.updateSortIndicators()
-    this.render()
-  }
-  
-  getCellValue(item, columnIndex) {
-    const keys = Object.keys(item)
-    const value = item[keys[columnIndex]]
-    return isNaN(value) ? String(value).toLowerCase() : Number(value)
-  }
-  
-  updateSortIndicators() {
-    const headers = this.table.querySelectorAll('thead th')
-    headers.forEach((header, index) => {
-      const indicator = header.querySelector('.sort-indicator')
-      if (indicator) {
-        if (index === this.sortColumn) {
-          indicator.textContent = this.sortDirection === 'asc' ? '↑' : '↓'
-        } else {
-          indicator.textContent = '↕'
-        }
-      }
-    })
-  }
-  
-  handlePagination(action) {
-    const totalPages = Math.ceil(this.filteredData.length / this.options.itemsPerPage)
-    
-    switch (action) {
-      case 'first':
-        this.currentPage = 1
-        break
-      case 'prev':
-        if (this.currentPage > 1) this.currentPage--
-        break
-      case 'next':
-        if (this.currentPage < totalPages) this.currentPage++
-        break
-      case 'last':
-        this.currentPage = totalPages
-        break
-    }
-    
-    this.render()
-  }
-  
-  handleRowSelection(checkbox) {
-    const row = checkbox.closest('tr')
-    const rowId = row.dataset.id
-    
-    if (checkbox.checked) {
-      this.selectedItems.add(rowId)
-    } else {
-      this.selectedItems.delete(rowId)
-    }
-    
-    this.updateSelectionInfo()
-    this.updateDeleteButton()
-  }
-  
-  updateSelectionInfo() {
-    const selectionInfo = this.table.querySelector('.selection-info')
-    if (selectionInfo) {
-      selectionInfo.textContent = `${this.selectedItems.size} élément(s) sélectionné(s)`
-    }
-  }
-  
-  updateDeleteButton() {
-    const deleteBtn = this.table.querySelector('.btn-outline-danger')
-    if (deleteBtn) {
-      if (this.selectedItems.size > 0) {
-        deleteBtn.style.opacity = '1'
-        deleteBtn.style.pointerEvents = 'auto'
-      } else {
-        deleteBtn.style.opacity = '0.5'
-        deleteBtn.style.pointerEvents = 'none'
-      }
-    }
-  }
-  
-  deleteSelected() {
-    if (this.selectedItems.size === 0) return
-    
-    if (confirm(`Êtes-vous sûr de vouloir supprimer ${this.selectedItems.size} élément(s) ?`)) {
-      this.data = this.data.filter(item => !this.selectedItems.has(item.id))
-      this.filteredData = this.filteredData.filter(item => !this.selectedItems.has(item.id))
-      this.selectedItems.clear()
-      this.render()
-    }
-  }
-  
-  exportToCSV() {
-    const csvContent = this.generateCSV()
-    this.downloadCSV(csvContent, 'export.csv')
-  }
-  
-  generateCSV() {
-    if (this.filteredData.length === 0) return ''
-    
-    const headers = Object.keys(this.filteredData[0])
-    const csvRows = []
-    
-    // En-têtes
-    csvRows.push(headers.join(','))
-    
-    // Données
-    this.filteredData.forEach(row => {
-      const values = headers.map(header => {
-        const value = row[header]
-        // Échapper les virgules et guillemets
-        return `"${String(value).replace(/"/g, '""')}"`
-      })
-      csvRows.push(values.join(','))
-    })
-    
-    return csvRows.join('\n')
-  }
-  
-  downloadCSV(csvContent, filename) {
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
-    const url = URL.createObjectURL(blob)
-    
-    link.setAttribute('href', url)
-    link.setAttribute('download', filename)
-    link.style.visibility = 'hidden'
-    
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }
-  
+
+  /**
+   * Rendre le tableau
+   */
   render() {
-    const tbody = this.table.querySelector('tbody')
-    if (!tbody) return
+    // Créer l'en-tête
+    this.renderHeader()
     
+    // Créer le corps
+    this.renderBody()
+    
+    // Mettre à jour la pagination
+    if (this.options.pagination) {
+      this.updatePagination()
+    }
+  }
+
+  /**
+   * Rendre l'en-tête
+   */
+  renderHeader() {
+    const thead = this.table.querySelector('thead') || document.createElement('thead')
+    thead.innerHTML = ''
+    
+    const row = document.createElement('tr')
+    
+    // Checkbox de sélection multiple
+    if (this.options.selectable) {
+      const th = document.createElement('th')
+      th.className = 'select-column'
+      th.innerHTML = '<input type="checkbox" class="select-all">'
+      row.appendChild(th)
+    }
+    
+    // Colonnes
+    this.columns.forEach(column => {
+      const th = document.createElement('th')
+      th.textContent = column.label
+      
+      if (this.options.sortable && column.sortable !== false) {
+        th.className = 'sortable'
+        th.dataset.sortable = column.key
+        th.innerHTML = `
+          ${column.label}
+          <span class="sort-indicator">
+            ${this.sortColumn === column.key ? (this.sortDirection === 'asc' ? '↑' : '↓') : '↕'}
+          </span>
+        `
+      }
+      
+      row.appendChild(th)
+    })
+    
+    thead.appendChild(row)
+    this.table.appendChild(thead)
+  }
+
+  /**
+   * Rendre le corps
+   */
+  renderBody() {
+    const tbody = this.table.querySelector('tbody') || document.createElement('tbody')
     tbody.innerHTML = ''
     
     const startIndex = (this.currentPage - 1) * this.options.itemsPerPage
     const endIndex = startIndex + this.options.itemsPerPage
-    const pageData = this.filteredData.slice(startIndex, endIndex)
+    const pageData = this.sortedData.slice(startIndex, endIndex)
     
     pageData.forEach((item, index) => {
       const row = document.createElement('tr')
-      row.dataset.id = item.id || index
-      row.style.cssText = `
-        border-bottom: 1px solid #dee2e6;
-      `
+      row.dataset.itemId = item.id || index
       
       // Checkbox de sélection
       if (this.options.selectable) {
-        const cell = document.createElement('td')
-        const checkbox = document.createElement('input')
-        checkbox.type = 'checkbox'
-        checkbox.className = 'row-select'
-        checkbox.checked = this.selectedItems.has(item.id || index)
-        cell.appendChild(checkbox)
-        row.appendChild(cell)
+        const td = document.createElement('td')
+        td.className = 'select-column'
+        td.innerHTML = `
+          <input type="checkbox" class="select-item" data-item-id="${item.id || index}">
+        `
+        row.appendChild(td)
       }
       
-      // Données
-      Object.values(item).forEach(value => {
-        const cell = document.createElement('td')
-        cell.textContent = value
-        cell.style.cssText = `
-          padding: 12px;
-          vertical-align: middle;
-        `
-        row.appendChild(cell)
+      // Cellules de données
+      this.columns.forEach(column => {
+        const td = document.createElement('td')
+        td.textContent = this.getCellValue(item, column)
+        row.appendChild(td)
       })
       
       tbody.appendChild(row)
     })
     
-    this.updatePagination()
-    this.updateSelectionInfo()
-    this.updateDeleteButton()
+    this.table.appendChild(tbody)
   }
-  
-  updatePagination() {
-    if (!this.options.pagination) return
+
+  /**
+   * Obtenir la valeur d'une cellule
+   * @param {Object} item - Élément de données
+   * @param {Object} column - Configuration de la colonne
+   * @returns {string} Valeur formatée
+   */
+  getCellValue(item, column) {
+    let value = item[column.key]
     
-    const totalPages = Math.ceil(this.filteredData.length / this.options.itemsPerPage)
-    const paginationInfo = this.table.querySelector('.pagination-info')
-    const paginationBtns = this.table.querySelectorAll('.pagination-btn')
-    
-    if (paginationInfo) {
-      paginationInfo.textContent = `Page ${this.currentPage} sur ${totalPages}`
+    if (column.formatter) {
+      value = column.formatter(value, item)
     }
     
-    paginationBtns.forEach(btn => {
-      const action = btn.dataset.action
-      let disabled = false
-      
-      switch (action) {
-        case 'first':
-        case 'prev':
-          disabled = this.currentPage === 1
-          break
-        case 'next':
-        case 'last':
-          disabled = this.currentPage === totalPages
-          break
-      }
-      
-      btn.disabled = disabled
-      btn.style.opacity = disabled ? '0.5' : '1'
-      btn.style.pointerEvents = disabled ? 'none' : 'auto'
-    })
+    return value || ''
   }
-  
-  getColumnCount() {
-    const thead = this.table.querySelector('thead')
-    if (!thead) return 0
+
+  /**
+   * Trier le tableau
+   * @param {string} column - Colonne à trier
+   */
+  sort(column) {
+    if (this.sortColumn === column) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc'
+    } else {
+      this.sortColumn = column
+      this.sortDirection = 'asc'
+    }
     
-    const firstRow = thead.querySelector('tr')
-    if (!firstRow) return 0
+    this.sortedData.sort((a, b) => {
+      const aVal = a[column]
+      const bVal = b[column]
+      
+      if (aVal < bVal) return this.sortDirection === 'asc' ? -1 : 1
+      if (aVal > bVal) return this.sortDirection === 'asc' ? 1 : -1
+      return 0
+    })
     
-    return firstRow.querySelectorAll('th').length
+    this.render()
+  }
+
+  /**
+   * Définir la requête de recherche
+   * @param {string} query - Requête de recherche
+   */
+  setSearchQuery(query) {
+    this.searchQuery = query.toLowerCase()
+    this.filteredData = this.data.filter(item => {
+      return this.columns.some(column => {
+        const value = this.getCellValue(item, column).toString().toLowerCase()
+        return value.includes(this.searchQuery)
+      })
+    })
+    
+    this.sortedData = [...this.filteredData]
+    this.currentPage = 1
+    this.render()
+  }
+
+  /**
+   * Page précédente
+   */
+  previousPage() {
+    if (this.currentPage > 1) {
+      this.currentPage--
+      this.render()
+    }
+  }
+
+  /**
+   * Page suivante
+   */
+  nextPage() {
+    const totalPages = Math.ceil(this.sortedData.length / this.options.itemsPerPage)
+    if (this.currentPage < totalPages) {
+      this.currentPage++
+      this.render()
+    }
+  }
+
+  /**
+   * Mettre à jour la pagination
+   */
+  updatePagination() {
+    const totalItems = this.sortedData.length
+    const totalPages = Math.ceil(totalItems / this.options.itemsPerPage)
+    const startItem = (this.currentPage - 1) * this.options.itemsPerPage + 1
+    const endItem = Math.min(this.currentPage * this.options.itemsPerPage, totalItems)
+    
+    this.paginationInfo.textContent = `${startItem}-${endItem} sur ${totalItems} éléments`
+    
+    this.prevButton.disabled = this.currentPage === 1
+    this.nextButton.disabled = this.currentPage === totalPages
+  }
+
+  /**
+   * Basculer la sélection de tous les éléments
+   * @param {boolean} selected - Sélectionner ou désélectionner
+   */
+  toggleSelectAll(selected) {
+    this.selectedItems.clear()
+    
+    if (selected) {
+      const startIndex = (this.currentPage - 1) * this.options.itemsPerPage
+      const endIndex = startIndex + this.options.itemsPerPage
+      const pageData = this.sortedData.slice(startIndex, endIndex)
+      
+      pageData.forEach(item => {
+        this.selectedItems.add(item.id || item)
+      })
+    }
+    
+    this.updateSelectAllCheckbox()
+    this.render()
+  }
+
+  /**
+   * Basculer la sélection d'un élément
+   * @param {string} itemId - ID de l'élément
+   * @param {boolean} selected - Sélectionner ou désélectionner
+   */
+  toggleSelectItem(itemId, selected) {
+    if (selected) {
+      this.selectedItems.add(itemId)
+    } else {
+      this.selectedItems.delete(itemId)
+    }
+    
+    this.updateSelectAllCheckbox()
+  }
+
+  /**
+   * Mettre à jour la checkbox "Tout sélectionner"
+   */
+  updateSelectAllCheckbox() {
+    const selectAllCheckbox = this.table.querySelector('.select-all')
+    if (selectAllCheckbox) {
+      const startIndex = (this.currentPage - 1) * this.options.itemsPerPage
+      const endIndex = startIndex + this.options.itemsPerPage
+      const pageData = this.sortedData.slice(startIndex, endIndex)
+      
+      const allSelected = pageData.every(item => 
+        this.selectedItems.has(item.id || item)
+      )
+      
+      selectAllCheckbox.checked = allSelected
+    }
+  }
+
+  /**
+   * Obtenir les éléments sélectionnés
+   * @returns {Array} Éléments sélectionnés
+   */
+  getSelectedItems() {
+    return Array.from(this.selectedItems)
+  }
+
+  /**
+   * Exporter en CSV
+   */
+  exportToCSV() {
+    const csvData = this.sortedData.map(item => {
+      return this.columns.map(column => {
+        const value = this.getCellValue(item, column)
+        return `"${value.toString().replace(/"/g, '""')}"`
+      }).join(',')
+    })
+    
+    const csvContent = [
+      this.columns.map(col => `"${col.label}"`).join(','),
+      ...csvData
+    ].join('\n')
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = `export-${new Date().toISOString().split('T')[0]}.csv`
+    link.click()
+  }
+
+  /**
+   * Détruire le tableau
+   */
+  destroy() {
+    if (this.container && this.container.parentNode) {
+      this.container.parentNode.replaceChild(this.table, this.container)
+    }
   }
 }
 
 /**
- * Fonction utilitaire pour créer un tableau simple
- * @param {HTMLElement} container - Conteneur du tableau
- * @param {Array} data - Données du tableau
+ * Créer un tableau avancé
+ * @param {HTMLTableElement} tableElement - Élément table
  * @param {Object} options - Options du tableau
+ * @returns {TableManager} Gestionnaire du tableau
  */
-export function createTable(container, data, options = {}) {
-  const table = document.createElement('table')
-  table.className = 'data-table'
-  table.style.cssText = `
-    width: 100%;
-    border-collapse: collapse;
-    background-color: white;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  `
+export const createTable = (tableElement, options = {}) => {
+  return new TableManager(tableElement, options)
+}
+
+/**
+ * Formateurs de cellules prédéfinis
+ */
+export const formatters = {
+  // Formatage de prix
+  price: (value) => {
+    return new Intl.NumberFormat('fr-FR', {
+      style: 'currency',
+      currency: 'EUR'
+    }).format(value || 0)
+  },
   
-  // Créer l'en-tête
-  const thead = document.createElement('thead')
-  const headerRow = document.createElement('tr')
+  // Formatage de date
+  date: (value) => {
+    if (!value) return ''
+    return new Date(value).toLocaleDateString('fr-FR')
+  },
   
-  if (data.length > 0) {
-    Object.keys(data[0]).forEach(key => {
-      const th = document.createElement('th')
-      th.textContent = key.charAt(0).toUpperCase() + key.slice(1)
-      th.style.cssText = `
-        padding: 12px;
-        text-align: left;
-        font-weight: 600;
-        color: #374151;
-        border-bottom: 2px solid #e5e7eb;
-      `
-      headerRow.appendChild(th)
-    })
+  // Formatage de date et heure
+  datetime: (value) => {
+    if (!value) return ''
+    return new Date(value).toLocaleString('fr-FR')
+  },
+  
+  // Formatage de pourcentage
+  percentage: (value) => {
+    return `${(value || 0).toFixed(1)}%`
+  },
+  
+  // Formatage de nombre
+  number: (value) => {
+    return new Intl.NumberFormat('fr-FR').format(value || 0)
+  },
+  
+  // Formatage de statut avec couleur
+  status: (value, item) => {
+    const statusMap = {
+      active: { text: 'Actif', class: 'status-active' },
+      inactive: { text: 'Inactif', class: 'status-inactive' },
+      pending: { text: 'En attente', class: 'status-pending' },
+      completed: { text: 'Terminé', class: 'status-completed' },
+      cancelled: { text: 'Annulé', class: 'status-cancelled' }
+    }
+    
+    const status = statusMap[value] || { text: value, class: 'status-default' }
+    return `<span class="status ${status.class}">${status.text}</span>`
+  },
+  
+  // Formatage de booléen
+  boolean: (value) => {
+    return value ? 'Oui' : 'Non'
+  },
+  
+  // Formatage de texte tronqué
+  truncate: (maxLength = 50) => (value) => {
+    if (!value) return ''
+    return value.length > maxLength 
+      ? value.substring(0, maxLength) + '...'
+      : value
   }
-  
-  thead.appendChild(headerRow)
-  table.appendChild(thead)
-  
-  // Créer le corps
-  const tbody = document.createElement('tbody')
-  table.appendChild(tbody)
-  
-  container.appendChild(table)
-  
-  // Initialiser le gestionnaire de tableau
-  const manager = new TableManager(table, options)
-  manager.setData(data)
-  
-  return manager
+}
+
+export default {
+  TableManager,
+  createTable,
+  formatters
 }
