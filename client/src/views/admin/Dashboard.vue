@@ -232,7 +232,7 @@
 import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
-import { drawLineChart, drawBarChart, drawDoughnutChart } from '../../utils/charts'
+import { createChart, formatChartData } from '../../utils/charts'
 
 // Router et stores
 const router = useRouter()

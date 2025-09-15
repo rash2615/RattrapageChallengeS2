@@ -13,7 +13,7 @@ class EmailService {
   
   async initialize() {
     try {
-      this.transporter = nodemailer.createTransporter({
+      this.transporter = nodemailer.createTransport({
         host: process.env.EMAIL_HOST,
         port: process.env.EMAIL_PORT,
         secure: process.env.EMAIL_PORT == 465, // true pour 465, false pour autres ports

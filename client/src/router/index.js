@@ -29,7 +29,6 @@ import NotFound from '../views/NotFound.vue'
 // Vues d'administration
 import AdminDashboard from '../views/admin/Dashboard.vue'
 import AdminUsers from '../views/admin/Users.vue'
-import AdminProducts from '../views/admin/Products.vue'
 import AdminOrders from '../views/admin/Orders.vue'
 import AdminAnalytics from '../views/admin/Analytics.vue'
 
@@ -209,26 +208,6 @@ const routes = [
     path: '/admin/orders',
     name: 'AdminOrders',
     component: () => import('../views/admin/Orders.vue'),
-    meta: { 
-      title: 'Gestion des commandes - SPARK',
-      requiresAuth: true,
-      requiresAdmin: true 
-    }
-  },
-  {
-    path: '/admin/products',
-    name: 'AdminProducts',
-    component: AdminProducts,
-    meta: { 
-      title: 'Gestion des produits - SPARK',
-      requiresAuth: true,
-      requiresAdmin: true 
-    }
-  },
-  {
-    path: '/admin/orders',
-    name: 'AdminOrders',
-    component: AdminOrders,
     meta: { 
       title: 'Gestion des commandes - SPARK',
       requiresAuth: true,
