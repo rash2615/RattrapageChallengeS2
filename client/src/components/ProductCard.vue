@@ -1,5 +1,5 @@
 <template>
-  <div class="product-card">
+  <div class="product-card" :class="`view-${viewMode}`">
     <!-- Image du produit -->
     <div class="product-image">
       <router-link :to="`/products/${product._id}`" class="image-link">
@@ -163,6 +163,11 @@ const props = defineProps({
   product: {
     type: Object,
     required: true
+  },
+  viewMode: {
+    type: String,
+    default: 'grid',
+    validator: (value) => ['grid', 'list'].includes(value)
   }
 })
 
@@ -608,6 +613,111 @@ const quickView = () => {
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+/* Vue liste */
+.product-card.view-list {
+  display: flex;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.product-card.view-list:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.product-card.view-list .product-image {
+  width: 200px;
+  height: 200px;
+  flex-shrink: 0;
+}
+
+.product-card.view-list .product-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 0;
+}
+
+.product-card.view-list .product-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.product-card.view-list .product-brand {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+}
+
+.product-card.view-list .product-name {
+  font-size: 1.25rem;
+  margin: 0;
+  flex: 1;
+}
+
+.product-card.view-list .product-description {
+  margin: 0.75rem 0;
+  color: #6b7280;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.product-card.view-list .product-pricing {
+  margin: 1rem 0;
+}
+
+.product-card.view-list .product-actions {
+  position: static;
+  opacity: 1;
+  transform: none;
+  background: none;
+  padding: 0;
+  margin-left: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.product-card.view-list .action-button {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.5rem;
+}
+
+.product-card.view-list .add-to-cart-btn {
+  margin-top: 1rem;
+  align-self: flex-start;
+}
+
+/* Responsive pour vue liste */
+@media (max-width: 768px) {
+  .product-card.view-list {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .product-card.view-list .product-image {
+    width: 100%;
+    height: 250px;
+  }
+  
+  .product-card.view-list .product-actions {
+    flex-direction: row;
+    margin-left: 0;
+    margin-top: 1rem;
   }
 }
 </style>
