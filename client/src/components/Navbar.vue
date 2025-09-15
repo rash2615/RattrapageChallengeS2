@@ -99,6 +99,15 @@
                 <span class="menu-icon">📦</span>
                 Mes commandes
               </router-link>
+              <router-link 
+                v-if="authStore.user?.role === 'admin'"
+                to="/admin" 
+                class="dropdown-item" 
+                @click="closeUserMenu"
+              >
+                <span class="menu-icon">⚙️</span>
+                Administration
+              </router-link>
               <div class="dropdown-divider"></div>
               <button @click="handleLogout" class="dropdown-item logout-item">
                 <span class="menu-icon">🚪</span>

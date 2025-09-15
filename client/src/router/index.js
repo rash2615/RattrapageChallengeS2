@@ -161,9 +161,19 @@ const routes = [
   {
     path: '/admin/users',
     name: 'AdminUsers',
-    component: AdminUsers,
+    component: () => import('../views/admin/Users.vue'),
     meta: { 
       title: 'Gestion des utilisateurs - SPARK',
+      requiresAuth: true,
+      requiresAdmin: true 
+    }
+  },
+  {
+    path: '/admin/orders',
+    name: 'AdminOrders',
+    component: () => import('../views/admin/Orders.vue'),
+    meta: { 
+      title: 'Gestion des commandes - SPARK',
       requiresAuth: true,
       requiresAdmin: true 
     }
