@@ -20,6 +20,10 @@ import Checkout from '../views/Checkout.vue'
 import Orders from '../views/Orders.vue'
 import OrderDetail from '../views/OrderDetail.vue'
 import Profile from '../views/Profile.vue'
+import PrivacyPolicy from '../views/PrivacyPolicy.vue'
+import TermsOfService from '../views/TermsOfService.vue'
+import DataManagement from '../views/DataManagement.vue'
+import LegalNotice from '../views/LegalNotice.vue'
 import NotFound from '../views/NotFound.vue'
 
 // Vues d'administration
@@ -144,6 +148,39 @@ const routes = [
     meta: { 
       title: 'Mon profil - SPARK',
       requiresAuth: true 
+    }
+  },
+  {
+    path: '/privacy-policy',
+    name: 'PrivacyPolicy',
+    component: PrivacyPolicy,
+    meta: { 
+      title: 'Politique de confidentialité - SPARK'
+    }
+  },
+  {
+    path: '/terms-of-service',
+    name: 'TermsOfService',
+    component: TermsOfService,
+    meta: { 
+      title: 'Conditions générales d\'utilisation - SPARK'
+    }
+  },
+  {
+    path: '/data-management',
+    name: 'DataManagement',
+    component: DataManagement,
+    meta: { 
+      title: 'Gestion des données personnelles - SPARK',
+      requiresAuth: true 
+    }
+  },
+  {
+    path: '/legal-notice',
+    name: 'LegalNotice',
+    component: LegalNotice,
+    meta: { 
+      title: 'Mentions légales - SPARK'
     }
   },
   

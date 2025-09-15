@@ -86,11 +86,11 @@
           <h3 class="footer-title">Informations</h3>
           <ul class="footer-links">
             <li><a href="#" class="footer-link">À propos</a></li>
-            <li><a href="#" class="footer-link">Mentions légales</a></li>
-            <li><a href="#" class="footer-link">Politique de confidentialité</a></li>
-            <li><a href="#" class="footer-link">CGV</a></li>
-            <li><a href="#" class="footer-link">RGPD</a></li>
-            <li><a href="#" class="footer-link">Cookies</a></li>
+            <li><router-link to="/legal-notice" class="footer-link">Mentions légales</router-link></li>
+            <li><router-link to="/privacy-policy" class="footer-link">Politique de confidentialité</router-link></li>
+            <li><router-link to="/terms-of-service" class="footer-link">CGV</router-link></li>
+            <li><router-link to="/data-management" class="footer-link">Gestion des données</router-link></li>
+            <li><a href="#" class="footer-link" @click="showCookieConsent">Cookies</a></li>
           </ul>
         </div>
       </div>
@@ -182,6 +182,11 @@ const newsletterMessageType = ref('')
 const currentYear = computed(() => new Date().getFullYear())
 
 // Fonctions
+const showCookieConsent = () => {
+  // Déclencher l'affichage du consentement des cookies
+  window.dispatchEvent(new CustomEvent('show-cookie-consent'))
+}
+
 const handleNewsletter = async () => {
   if (!newsletterEmail.value) return
 

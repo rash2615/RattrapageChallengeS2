@@ -14,6 +14,9 @@
     <!-- Modales globales -->
     <ConfirmModal />
     
+    <!-- Consentement cookies RGPD -->
+    <CookieConsent />
+    
     <!-- Notifications toast -->
     <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2">
       <!-- Les notifications toast seront ajoutées ici dynamiquement -->
@@ -37,6 +40,7 @@ import { useCartStore } from './stores/cart'
 import Navbar from './components/Navbar.vue'
 import Footer from './components/Footer.vue'
 import ConfirmModal from './components/ConfirmModal.vue'
+import CookieConsent from './components/RGPD/CookieConsent.vue'
 
 // Stores
 const authStore = useAuthStore()
