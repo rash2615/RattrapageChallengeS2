@@ -13,6 +13,13 @@ class EmailService {
   
   async initialize() {
     try {
+      // Vérifier si les variables d'environnement email sont configurées
+      if (!process.env.EMAIL_HOST || !process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+        console.log('⚠️  Service email désactivé - Variables d\'environnement manquantes')
+        this.transporter = null
+        return
+      }
+
       this.transporter = nodemailer.createTransport({
         host: process.env.EMAIL_HOST,
         port: process.env.EMAIL_PORT,

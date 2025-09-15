@@ -5,7 +5,7 @@
 
 const express = require('express')
 const router = express.Router()
-const auth = require('../middleware/auth')
+const { authenticate: auth, authorize } = require('../middleware/auth')
 const {
   calculateDateRange,
   getMainMetrics,
@@ -25,8 +25,8 @@ const {
 } = require('../utils/analyticsHelpers')
 
 // Middleware d'authentification et d'autorisation admin
-router.use(auth.authenticateToken)
-router.use(auth.requireAdmin)
+router.use(auth)
+router.use(authorize(['admin']))
 
 /**
  * GET /api/analytics
