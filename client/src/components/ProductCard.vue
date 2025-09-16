@@ -187,7 +187,7 @@ const primaryImage = computed(() => {
     const primaryImg = props.product.images.find(img => img.isPrimary)
     return primaryImg?.url || props.product.images[0].url
   }
-  return '/images/placeholder-product.jpg'
+  return '/placeholder-product.svg'
 })
 
 const compatibleDevices = computed(() => {
@@ -203,7 +203,7 @@ const hasMoreDevices = computed(() => {
 
 // Fonctions
 const handleImageError = (event) => {
-  event.target.src = '/images/placeholder-product.jpg'
+  event.target.src = '/placeholder-product.svg'
 }
 
 const handleAddToCart = async () => {
